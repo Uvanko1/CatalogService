@@ -51,9 +51,6 @@ namespace CatalogService.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex(new[] { "Title" }, "IX_catalog_objects_title_btree")
-                        .HasDatabaseName("ix_catalog_objects_title_btree");
-
                     b.HasIndex(new[] { "Title" }, "IX_catalog_objects_title_trgm")
                         .HasDatabaseName("ix_catalog_objects_title_trgm");
 

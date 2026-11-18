@@ -24,7 +24,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: DockerFile
 
     restart: unless-stopped
 
