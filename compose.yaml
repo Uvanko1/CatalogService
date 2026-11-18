@@ -1,0 +1,61 @@
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - catalog_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+
+      ConnectionStrings__CatalogDatabase: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
+
+      ObjectStorage__ServiceUrl: ${OBJECT_STORAGE_SERVICE_URL}
+      ObjectStorage__BucketName: ${OBJECT_STORAGE_BUCKET_NAME}
+      ObjectStorage__Region: ${OBJECT_STORAGE_REGION}
+      ObjectStorage__AccessKeyId: ${OBJECT_STORAGE_ACCESS_KEY_ID}
+      ObjectStorage__SecretAccessKey: ${OBJECT_STORAGE_SECRET_ACCESS_KEY}
+
+      KinopoiskApi__BaseUrl: ${KINOPOISK_BASE_URL}
+      KinopoiskApi__ApiKey: ${KINOPOISK_API_KEY}
+
+      ReBooksApi__BaseUrl: ${REBOOKS_BASE_URL}
+      ReBooksApi__ApiKey: ${REBOOKS_API_KEY}
+
+      ShikimoriApi__BaseUrl: ${SHIKIMORI_BASE_URL}
+
+      SteamApi__PopularGamesUrl: ${STEAM_POPULAR_GAMES_URL}
+      SteamApi__GameUrl: ${STEAM_GAME_URL}
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  catalog_data:

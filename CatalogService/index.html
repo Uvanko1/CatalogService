@@ -1,0 +1,124 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CatalogService — тест</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px;
+            background: #f4f4f4;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        #objects {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+            background: #eee;
+            border-radius: 6px;
+        }
+
+        .card h3 {
+            margin-bottom: 5px;
+        }
+
+        .error {
+            color: #c00;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Тест каталога</h1>
+
+    <p id="status">Загрузка объектов...</p>
+
+    <div id="objects"></div>
+
+    <script>
+        const API_URL = "http://localhost:5159/catalog/objects";
+
+        async function loadObjects() {
+            const container = document.getElementById("objects");
+            const status = document.getElementById("status");
+
+            try {
+                const response = await fetch(`${API_URL}?category_id=2&page=2`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ошибка: ${response.status}`);
+                }
+
+                const objects = await response.json();
+
+                status.textContent = `Получено объектов: ${objects.length}`;
+
+                for (const obj of objects) {
+                    const card = document.createElement("div");
+                    card.className = "card";
+
+                    const title = document.createElement("h3");
+                    title.textContent = obj.title;
+
+                    const image = document.createElement("img");
+                    image.alt = obj.title;
+                    if (obj.image_url) {
+                        image.src = obj.image_url;
+
+                        image.onerror = () => {
+                            image.remove();
+                            const error = document.createElement("p");
+                            error.className = "error";
+                            error.textContent = "Не удалось загрузить изображение";
+                            card.appendChild(error);
+                        };
+                    } else {
+                        image.remove();
+
+                        const error = document.createElement("p");
+                        error.textContent = "Изображение отсутствует";
+                        card.appendChild(error);
+                    }
+
+                    card.appendChild(title);
+
+                    if (image.src) {
+                        card.appendChild(image);
+                    }
+
+                    container.appendChild(card);
+                }
+
+            } catch (error) {
+                status.textContent = `Ошибка: ${error.message}`;
+                status.className = "error";
+                console.error(error);
+            }
+        }
+
+        loadObjects();
+    </script>
+
+</body>
+</html>
