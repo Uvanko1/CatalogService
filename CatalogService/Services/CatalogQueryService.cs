@@ -40,9 +40,9 @@ public class CatalogQueryService
             {
                 id = obj.Id,
                 title = obj.Title,
-                category_id = obj.CategoryId,
-                image_url = ImageUrl,
-                rating_summary = new RatingDto()
+                CategoryId = obj.CategoryId,
+                ImageUrl = ImageUrl,
+                RatingSummary = new RatingDto()
             });
         }
         return result;

@@ -32,7 +32,7 @@ public class CatalogController: ControllerBase
 
     [Route("categories")]
     [HttpGet]
-    public async Task<ActionResult<List<CategoryDto>>> GetCategories()
+    public async Task<ActionResult<CategoriesResponseDto>> GetCategories()
     {
         var response = new CategoriesResponseDto
         {
@@ -48,28 +48,86 @@ public class CatalogController: ControllerBase
         [FromQuery] int? category_id,
         [FromQuery] int page = 1)
     {
-        var objects = await CatalogQueryService.GetObjects(q, category_id, page);
-        if (objects == null)
+        if (!string.IsNullOrWhiteSpace(q) && category_id.HasValue)
         {
-            return NotFound();
+            return BadRequest(
+                ErrorResponseFactory.Create(
+                    "CONFLICTING_FILTERS",
+                    "Параметры q и category_id нельзя использовать одновременно",
+                    HttpContext.TraceIdentifier
+                )
+            );
         }
+        if (category_id < 1 && category_id.HasValue)
+        {
+            return BadRequest(
+                ErrorResponseFactory.Create(
+                    "ILLEGAL_ARGUMENT_VALUE",
+                    "Некорректное значение для категории",
+                    HttpContext.TraceIdentifier
+                )
+            );
+        }
+        if (page < 1 || page > 1000)
+        {
+            return BadRequest(
+                ErrorResponseFactory.Create(
+                    "ILLEGAL_ARGUMENT_VALUE",
+                    "Некорректное значение для страницы",
+                    HttpContext.TraceIdentifier
+                )
+            );
+        }
+        string? query = null;
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            query = q.Trim();
+            if (query.Length < 2)
+            {
+                return BadRequest(
+                    ErrorResponseFactory.Create(
+                        "QUERY_TOO_SHORT",
+                        "Слишком маленькая длина поискового запроса",
+                        HttpContext.TraceIdentifier
+                    )
+                );
+            }
+        }
+        
+        var objects = await CatalogQueryService.GetObjects(query, category_id, page);
         return Ok(objects);
     }
 
     [Route("objects/{id}")]
     [HttpGet]
-    public async Task<ActionResult<CatalogObject>> GetObject(int id)
+    public async Task<ActionResult<CatalogObjectDto>> GetObject(int id)
     {
+        if (id < 1)
+        {
+            return BadRequest(
+                ErrorResponseFactory.Create(
+                    "ILLEGAL_ARGUMENT_VALUE",
+                    "Некорректное значение для идентификатора объекта",
+                    HttpContext.TraceIdentifier
+                )
+            );
+        }
         var catalogObject = await CatalogQueryService.GetObjectByIdAsync(id);
         if (catalogObject == null)
         {
-            return NotFound();
+            return NotFound(
+                ErrorResponseFactory.Create(
+                    "NOT_FOUND",
+                    "Объект каталога не найден",
+                    HttpContext.TraceIdentifier
+                )
+            );
         }
         return Ok(catalogObject);
     }
 
     [Route("objects/films/import")]
-    [HttpGet]
+    [HttpPost]
     public async Task<IActionResult> ImportFilms()
     {
         await _filmsImportService.ImportFilmsAsync();
@@ -77,7 +135,7 @@ public class CatalogController: ControllerBase
     }
 
     [Route("objects/anime/import")]
-    [HttpGet]
+    [HttpPost]
     public async Task<IActionResult> ImportAnime()
     {
         await _animeImportService.ImportAnimeAsync();
@@ -85,7 +143,7 @@ public class CatalogController: ControllerBase
     }
 
     [Route("objects/games/import")]
-    [HttpGet]
+    [HttpPost]
     public async Task<IActionResult> ImportGames()
     {
         await _gamesImportService.ImportGamesAsync();
@@ -93,7 +151,7 @@ public class CatalogController: ControllerBase
     }
 
     [Route("objects/books/import")]
-    [HttpGet]
+    [HttpPost]
     public async Task<IActionResult> ImportBooks()
     {
         await _booksImportService.ImportBooksAsync();

@@ -4,15 +4,15 @@ Accept: application/json
 GET http://localhost:5159/catalog/objects?q=чел&page=1
 Accept: application/json
 
-GET http://localhost:5159/catalog/objects/films/import
+POST http://localhost:5159/catalog/objects/films/import
 Accept: application/json
 
-GET http://localhost:5159/catalog/objects/anime/import
+POST http://localhost:5159/catalog/objects/anime/import
 Accept: application/json
 
-GET http://localhost:5159/catalog/objects/games/import
+POST http://localhost:5159/catalog/objects/games/import
 Accept: application/json
 
-GET http://localhost:5159/catalog/objects/books/import
+POST http://localhost:5159/catalog/objects/books/import
 Accept: application/json
 ###

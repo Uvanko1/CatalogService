@@ -24,29 +24,33 @@ public class CatalogStore
     public async Task<List<CatalogObject>> GetObjects(
         string? query, int? categoryId, int page)
     {
+
         var objectsQuery = CatalogDbContext.CatalogObjects.AsQueryable();
 
         if (!string.IsNullOrEmpty(query))
         {
+            query = EscapeLikePattern(query);
             objectsQuery = objectsQuery
-                .Where(x => EF.Functions.ILike(x.Title, $"%{query}%"))
+                .Where(x => EF.Functions.ILike(x.Title, $"%{query}%", "\\"))
                 .OrderBy(x =>
-                    EF.Functions.ILike(x.Title, query) ? 0 :
-                    EF.Functions.ILike(x.Title, $"{query}%") ? 1 : 2)
-                    .ThenBy(x => x.Title);
+                    EF.Functions.ILike(x.Title, query, "\\") ? 0 :
+                    EF.Functions.ILike(x.Title, $"{query}%", "\\") ? 1 : 2)
+                    .ThenBy(x => x.Title.ToLower()).ThenBy(x => x.Id);
         }
         else
         {
-            objectsQuery = objectsQuery.OrderBy(x => x.Title);
+            objectsQuery = objectsQuery.OrderBy(x => x.Title.ToLower()).ThenBy(x => x.Id);
         }
         if (categoryId.HasValue)
         {
             objectsQuery = objectsQuery.Where(x => x.CategoryId == categoryId.Value);
         }
 
+        Console.WriteLine(objectsQuery.ToQueryString());
+
         return await objectsQuery
-            .Skip((page - 1) * 10)
-            .Take(10)
+            .Skip((page - 1) * 20)
+            .Take(20)
             .ToListAsync();
     }
 
@@ -66,5 +70,13 @@ public class CatalogStore
     {
         CatalogDbContext.CatalogObjects.Update(catalogObject);
         await CatalogDbContext.SaveChangesAsync();
+    }
+
+    private static string EscapeLikePattern(string query)
+    {
+        return query
+            .Replace("\\", "\\\\")
+            .Replace("%", "\\%")
+            .Replace("_", "\\_");
     }
 }

@@ -16,7 +16,6 @@ public class CatalogDbContext : DbContext
 
     public DbSet<CatalogSubmission> CatalogSubmissions => Set<CatalogSubmission>();
 
-    public DbSet<SubmissionDecision> SubmissionDecisions => Set<SubmissionDecision>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -105,23 +104,6 @@ public class CatalogDbContext : DbContext
             entity.HasOne<CatalogObject>()
                 .WithMany()
                 .HasForeignKey(x => x.ResultObjectId)
-                .OnDelete(DeleteBehavior.Restrict);
-        });
-
-        modelBuilder.Entity<SubmissionDecision>(entity =>
-        {
-            entity.ToTable("submission_decisions");
-
-            entity.HasIndex(x => x.OperationId)
-                .IsUnique();
-            
-            entity.Property(x => x.Decision)
-                .IsRequired()
-                .HasMaxLength(20);
-
-            entity.HasOne<CatalogSubmission>()
-                .WithMany()
-                .HasForeignKey(x => x.SubmissionId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

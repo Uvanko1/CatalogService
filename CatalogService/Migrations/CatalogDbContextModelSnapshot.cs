@@ -142,41 +142,6 @@ namespace CatalogService.Migrations
                     b.ToTable("categories", (string)null);
                 });
 
-            modelBuilder.Entity("CatalogService.Models.SubmissionDecision", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Decision")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<int>("ModeratorId")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("OperationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("SubmissionId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OperationId")
-                        .IsUnique();
-
-                    b.HasIndex("SubmissionId");
-
-                    b.ToTable("submission_decisions", (string)null);
-                });
-
             modelBuilder.Entity("CatalogService.Models.CatalogObject", b =>
                 {
                     b.HasOne("CatalogService.Models.Category", "Category")
@@ -230,15 +195,6 @@ namespace CatalogService.Migrations
                         });
 
                     b.Navigation("Capabilities")
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("CatalogService.Models.SubmissionDecision", b =>
-                {
-                    b.HasOne("CatalogService.Models.CatalogSubmission", null)
-                        .WithMany()
-                        .HasForeignKey("SubmissionId")
-                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
