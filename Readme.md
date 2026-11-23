@@ -15,10 +15,10 @@
 
 Реализованы четыре эндпоинта для первоначального наполнения каталога объектами с использованием внешних API:
 
-- **`GET /catalog/objects/films/import`** — импорт фильмов с использованием Unofficial Kinopoisk API.
-- **`GET /catalog/objects/anime/import`** — импорт аниме с использованием Shikimori API.
-- **`GET /catalog/objects/games/import`** — импорт компьютерных игр с использованием Steam API.
-- **`GET /catalog/objects/books/import`** — импорт книг с использованием ReBooks API.
+- **`POST /catalog/objects/films/import`** — импорт фильмов с использованием Unofficial Kinopoisk API.
+- **`POST /catalog/objects/anime/import`** — импорт аниме с использованием Shikimori API.
+- **`POST /catalog/objects/games/import`** — импорт компьютерных игр с использованием Steam API.
+- **`POST /catalog/objects/books/import`** — импорт книг с использованием ReBooks API.
 
 Импортируемые данные используются для первоначального заполнения соответствующих категорий каталога.
 
