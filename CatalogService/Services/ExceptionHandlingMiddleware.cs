@@ -18,7 +18,7 @@ public class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             if (context.Response.HasStarted)
             {
@@ -27,7 +27,7 @@ public class ExceptionHandlingMiddleware
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
             var errorResponse = ErrorResponseFactory.Create(
                 "INTERNAL_SERVER_ERROR",
-                "Внутренняя ошибка сервера",
+                ex.Message,
                 context.TraceIdentifier
             );
             await context.Response.WriteAsJsonAsync(errorResponse);

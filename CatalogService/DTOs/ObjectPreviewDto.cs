@@ -1,4 +1,5 @@
 using CatalogService.Configuration;
+using CatalogService.Models.Enums;
 
 namespace CatalogService.DTOs;
 

@@ -1,5 +1,5 @@
 namespace CatalogService.DTOs;
-using CatalogService.Configuration;
+using CatalogService.Models.Enums;
 
 public class CatalogObjectDto
 {

@@ -15,6 +15,8 @@ public class CatalogDbContext : DbContext
     public DbSet<CatalogObject> CatalogObjects => Set<CatalogObject>();
 
     public DbSet<CatalogSubmission> CatalogSubmissions => Set<CatalogSubmission>();
+    
+    public DbSet<SubmissionDecision> SubmissionDecisions => Set<SubmissionDecision>();
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -101,6 +103,69 @@ public class CatalogDbContext : DbContext
                 .HasForeignKey(x => x.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            entity.HasOne<CatalogObject>()
+                .WithMany()
+                .HasForeignKey(x => x.ResultObjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            
+        });
+        
+        modelBuilder.Entity<SubmissionDecision>(entity =>
+        {
+            entity.ToTable("submission_decisions", table =>
+            {
+                table.HasCheckConstraint("CK_submission_decision_category_selection",
+                    """
+                    (
+                        ("ResolvedCategoryId" IS NULL OR "ResolvedCategoryName" IS NULL)
+                        AND
+                        ("ResolvedCategoryName" IS NULL OR
+                        length(btrim("ResolvedCategoryName")) BETWEEN 1 AND 100)
+                    )
+                    """);
+                table.HasCheckConstraint(
+                    "CK_submission_decisions_result",
+                    """
+                    (
+                        ("Action" = 'Approve' AND "ResultObjectId" IS NOT NULL AND "ResultCategoryId" IS NOT NULL)
+                        OR
+                        ("Action" = 'Reject' AND "ResultObjectId" IS NULL AND "ResultCategoryId" IS NULL)
+                    )
+                    """
+);
+            });
+
+            entity.HasIndex(x => x.OperationId).IsUnique();
+
+            entity.HasIndex(x => x.SubmissionId).IsUnique();
+
+            entity.HasOne<CatalogSubmission>()
+                .WithOne()
+                .HasForeignKey<SubmissionDecision>(x => x.SubmissionId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            entity.Property(x => x.OperationId)
+                .IsRequired();
+
+            entity.Property(x => x.Action)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(x => x.ResolvedCategoryName)
+                .HasMaxLength(100);
+            
+            entity.HasOne<Category>()
+                .WithMany()
+                .HasForeignKey(x => x.ResolvedCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            entity.HasOne<Category>()
+                .WithMany()
+                .HasForeignKey(x => x.ResultCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
             entity.HasOne<CatalogObject>()
                 .WithMany()
                 .HasForeignKey(x => x.ResultObjectId)

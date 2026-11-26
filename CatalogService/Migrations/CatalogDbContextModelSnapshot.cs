@@ -96,8 +96,8 @@ namespace CatalogService.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<int>("SubmitterId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("SubmitterId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -112,7 +112,7 @@ namespace CatalogService.Migrations
 
                     b.ToTable("catalog_submissions", null, t =>
                         {
-                            t.HasCheckConstraint("CK_catalog_submissions_category_selection", "((\"CategoryId\" IS NOT NULL AND \"ProposedCategoryName\" IS NULL) OR\n(\"CategoryId\" IS NULL AND \"ProposedCategoryName\" IS NOT NULL AND\nlength(btrim(\"ProposedCategoryName\")) BETWEEN 1 AND 100))");
+                            t.HasCheckConstraint("CK_catalog_submissions_category_selection", "((\"CategoryId\" IS NOT NULL AND \"ProposedCategoryName\" IS NULL) OR\r\n(\"CategoryId\" IS NULL AND \"ProposedCategoryName\" IS NOT NULL AND\r\nlength(btrim(\"ProposedCategoryName\")) BETWEEN 1 AND 100))");
                         });
                 });
 
@@ -140,6 +140,63 @@ namespace CatalogService.Migrations
                         .IsUnique();
 
                     b.ToTable("categories", (string)null);
+                });
+
+            modelBuilder.Entity("CatalogService.Models.SubmissionDecision", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("ResolvedCategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ResolvedCategoryName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("ResultCategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ResultObjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SubmissionId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OperationId")
+                        .IsUnique();
+
+                    b.HasIndex("ResolvedCategoryId");
+
+                    b.HasIndex("ResultCategoryId");
+
+                    b.HasIndex("ResultObjectId");
+
+                    b.HasIndex("SubmissionId")
+                        .IsUnique();
+
+                    b.ToTable("submission_decisions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_submission_decision_category_selection", "(\r\n    (\"ResolvedCategoryId\" IS NULL OR \"ResolvedCategoryName\" IS NULL)\r\n    AND\r\n    (\"ResolvedCategoryName\" IS NULL OR\r\n    length(btrim(\"ResolvedCategoryName\")) BETWEEN 1 AND 100)\r\n)");
+
+                            t.HasCheckConstraint("CK_submission_decisions_result", "(\r\n    (\"Action\" = 'Approve' AND \"ResultObjectId\" IS NOT NULL AND \"ResultCategoryId\" IS NOT NULL)\r\n    OR\r\n    (\"Action\" = 'Reject' AND \"ResultObjectId\" IS NULL AND \"ResultCategoryId\" IS NULL)\r\n)");
+                        });
                 });
 
             modelBuilder.Entity("CatalogService.Models.CatalogObject", b =>
@@ -195,6 +252,30 @@ namespace CatalogService.Migrations
                         });
 
                     b.Navigation("Capabilities")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("CatalogService.Models.SubmissionDecision", b =>
+                {
+                    b.HasOne("CatalogService.Models.Category", null)
+                        .WithMany()
+                        .HasForeignKey("ResolvedCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CatalogService.Models.Category", null)
+                        .WithMany()
+                        .HasForeignKey("ResultCategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CatalogService.Models.CatalogObject", null)
+                        .WithMany()
+                        .HasForeignKey("ResultObjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("CatalogService.Models.CatalogSubmission", null)
+                        .WithOne()
+                        .HasForeignKey("CatalogService.Models.SubmissionDecision", "SubmissionId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

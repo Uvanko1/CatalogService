@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using CatalogService.DTOs;
 using CatalogService.Services;
 using CatalogService.Models;
+using System.Net.Http.Headers;
 
 namespace CatalogService.Controllers;
 
@@ -15,12 +16,16 @@ public class CatalogController: ControllerBase
     private readonly AnimeImportService _animeImportService;
     private readonly GamesImportService _gamesImportService;
     private readonly BooksImportService _booksImportService;
+    private readonly IUserServiceClient _userServiceClient;
+    private readonly ICatalogSubmissionService _catalogSubmissionService;
     public CatalogController(
         CatalogQueryService catalogQueryService,
         FilmsImportService filmsImportService,
         AnimeImportService animeImportService,
         GamesImportService gamesImportService,
-        BooksImportService booksImportService
+        BooksImportService booksImportService,
+        IUserServiceClient userServiceClient,
+        ICatalogSubmissionService catalogSubmissionService
     )
     {
         CatalogQueryService = catalogQueryService;
@@ -28,6 +33,8 @@ public class CatalogController: ControllerBase
         _animeImportService = animeImportService;
         _gamesImportService = gamesImportService;
         _booksImportService = booksImportService;
+        _userServiceClient = userServiceClient;
+        _catalogSubmissionService = catalogSubmissionService;
     }
 
     [Route("categories")]
@@ -156,5 +163,98 @@ public class CatalogController: ControllerBase
     {
         await _booksImportService.ImportBooksAsync();
         return Ok();
+    }
+
+    [Route("submissions")]
+    [HttpPost]
+    [Consumes("multipart/form-data")]
+    public async Task<ActionResult<CatalogSubmissionCreatedDto>> CreateSubmission(
+        [FromForm] CatalogSubmissionDto catalogSubmissionDto
+    )
+    {
+        var authorizationHeader = Request.Headers.Authorization.ToString();
+
+        if (!AuthenticationHeaderValue.TryParse(
+            authorizationHeader,
+            out var authorization
+        ) || !string.Equals(authorization.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase
+        ) || string.IsNullOrWhiteSpace(authorization.Parameter))
+        {
+            return Unauthorized(
+                ErrorResponseFactory.Create(
+                    "UNAUTHORIZED",
+                    "Недействительный токен пользователя",
+                    HttpContext.TraceIdentifier
+                )
+            );
+        }
+        var accessToken = authorization.Parameter;
+        var user = await _userServiceClient.IntrospectAsync(accessToken);
+
+        if (!user.Active || !user.UserId.HasValue)
+        {
+            return Unauthorized(
+                ErrorResponseFactory.Create(
+                    "UNAUTHORIZED",
+                    "Недействительный токен пользователя",
+                    HttpContext.TraceIdentifier
+                )
+            );
+        }
+
+        var submission = await _catalogSubmissionService.CreateSubmissionAsync(
+            catalogSubmissionDto, user.UserId.Value
+        );
+
+        var response = new CatalogSubmissionCreatedDto
+        {
+            Id = submission.Id,
+            Status = submission.Status,
+            CreatedAt = submission.CreatedAt
+        };
+
+        return StatusCode(StatusCodes.Status201Created, response);
+    }
+
+    [Route("submissions/me")]
+    [HttpGet]
+    public async Task<ActionResult<CatalogSubmissionsDto>> GetMySubmissions()
+    {
+        var authorizationHeader = Request.Headers.Authorization.ToString();
+
+        if (!AuthenticationHeaderValue.TryParse(
+            authorizationHeader,
+            out var authorization
+        ) || !string.Equals(authorization.Scheme, "Bearer", StringComparison.OrdinalIgnoreCase
+        ) || string.IsNullOrWhiteSpace(authorization.Parameter))
+        {
+            return Unauthorized(
+                ErrorResponseFactory.Create(
+                    "UNAUTHORIZED",
+                    "Недействительный токен пользователя",
+                    HttpContext.TraceIdentifier
+                )
+            );
+        }
+        var accessToken = authorization.Parameter;
+        var user = await _userServiceClient.IntrospectAsync(accessToken);
+
+        if (!user.Active || !user.UserId.HasValue)
+        {
+            return Unauthorized(
+                ErrorResponseFactory.Create(
+                    "UNAUTHORIZED",
+                    "Недействительный токен пользователя",
+                    HttpContext.TraceIdentifier
+                )
+            );
+        }
+        var response = await _catalogSubmissionService
+            .GetMySubmissionsAsync(user.UserId.Value);
+        var responseDto = new CatalogSubmissionsDto
+        {
+            Items = response
+        };
+        return Ok(responseDto);
     }
 }

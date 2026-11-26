@@ -5,7 +5,7 @@ using CatalogService.Data;
 using CatalogService.DTOs;
 using CatalogService.Models;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.EntityFrameworkCore.Storage;
 
 public class CatalogStore
 {
@@ -78,5 +78,77 @@ public class CatalogStore
             .Replace("\\", "\\\\")
             .Replace("%", "\\%")
             .Replace("_", "\\_");
+    }
+
+    public async Task<CatalogSubmission?> GetSubmissionByIdAsync(int id)
+    {
+        return await CatalogDbContext.CatalogSubmissions
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+
+    public async Task<CatalogSubmission?> GetSubmissionForUpdateAsync(int id)
+    {
+        return await CatalogDbContext.CatalogSubmissions
+            .FromSqlInterpolated(
+                $"SELECT * FROM catalog_submissions WHERE \"Id\" = {id} FOR UPDATE"
+            )
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<Category?> GetCategoryByNormalizedNameAsync(string normalizedName)
+    {
+        return await CatalogDbContext.Categories
+            .FirstOrDefaultAsync(x => x.NormalizedName == normalizedName);
+    }
+
+    public async Task<Category?> GetCategoryByIdAsync(int id)
+    {
+        return await CatalogDbContext.Categories
+            .FirstOrDefaultAsync(x => x.Id == id);
+    }
+    public async Task<SubmissionDecision?> GetSubmissionDecisionAsync(int submissionId)
+    {
+        return await CatalogDbContext.SubmissionDecisions
+            .FirstOrDefaultAsync(x => x.SubmissionId == submissionId);
+    }
+
+    public void AddCategory(Category category)
+    {
+        CatalogDbContext.Categories.Add(category);
+    }
+
+    public void AddCatalogObject(CatalogObject catalogObject)
+    {
+        CatalogDbContext.CatalogObjects.Add(catalogObject);
+    }
+
+    public void AddSubmissionDecision(SubmissionDecision submissionDecision)
+    {
+        CatalogDbContext.SubmissionDecisions.Add(submissionDecision);
+    }
+
+    public async Task SaveAllChangesAsync()
+    {
+        await CatalogDbContext.SaveChangesAsync();
+    }
+
+    public async Task<IDbContextTransaction> BeginTransactionAsync()
+    {
+        return await CatalogDbContext.Database.BeginTransactionAsync();
+    }
+
+    public void AddCatalogSubmission(CatalogSubmission submission)
+    {
+        CatalogDbContext.CatalogSubmissions.Add(submission);
+    }
+
+    public async Task<List<CatalogSubmission>> GetSubmissionsBySubmitterIdAsync(
+        Guid submitterId
+    )
+    {
+        return await CatalogDbContext.CatalogSubmissions
+            .Where(s => s.SubmitterId == submitterId)
+            .OrderByDescending(s => s.CreatedAt)
+            .ToListAsync();
     }
 }

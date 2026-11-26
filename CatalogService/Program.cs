@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using CatalogService.Data;
 using CatalogService.Services;
 using CatalogService.Configuration;
@@ -42,7 +43,7 @@ builder.Services.AddHttpClient<FilmsImportService>();
 builder.Services.AddHttpClient<AnimeImportService>();
 builder.Services.AddHttpClient<GamesImportService>();
 builder.Services.AddHttpClient<BooksImportService>();
-builder.Services.AddHttpClient<IUserServiceClient, UserServiceClient>();
+builder.Services.AddScoped<IUserServiceClient, TestUserServiceClient>();
 builder.Services.AddSingleton<Amazon.S3.IAmazonS3, Amazon.S3.AmazonS3Client>(sp => 
     {
         var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ObjectStorageOptions>>().Value;
@@ -62,6 +63,27 @@ builder.Services.AddSingleton<Amazon.S3.IAmazonS3, Amazon.S3.AmazonS3Client>(sp 
 );
 builder.Services.AddScoped<ObjectStorageService>();
 builder.Services.AddScoped<CatalogQueryService>();
+builder.Services.AddScoped<ICatalogSubmissionService, CatalogSubmissionService>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Введите тестовый токен: test-token"
+    });
+
+    options.AddSecurityRequirement(document =>
+        new OpenApiSecurityRequirement
+        {
+            [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+        });
+});
+
 builder.Services.AddDbContext<CatalogDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("CatalogDatabase")));
 
@@ -73,6 +95,8 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.MapControllers();

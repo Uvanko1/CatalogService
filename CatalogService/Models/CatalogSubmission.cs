@@ -13,11 +13,12 @@ public class CatalogSubmission
     [MaxLength(100)]
     public string? ProposedCategoryName { get; set; } = null;
     public string? ImageKey { get; set; } = null;
-    public int SubmitterId { get; set; }
+    public Guid SubmitterId { get; set; }
     [Required]
     [MaxLength(20)]
     public string Status { get; set; } = "pending";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public int? ResultObjectId { get; set; } = null;
     public string? RejectionReason { get; set; } = null;
+
 }
